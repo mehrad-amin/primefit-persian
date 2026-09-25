@@ -1,0 +1,49 @@
+@import "tailwindcss";
+
+@theme {
+  --color-dark-950: #050505;
+  --color-dark-900: #0a0a0a;
+  --color-dark-850: #111111;
+  --color-dark-800: #171717;
+  --color-dark-700: #262626;
+
+  --color-gold-400: #f1d46e;
+  --color-gold-500: #d4af37;
+  --color-gold-600: #aa820a;
+
+  --color-accent-lime: #ccff00;
+  --color-accent-emerald: #10b981;
+
+  --font-vazir: var(--font-vazir), system-ui, -apple-system, sans-serif;
+}
+
+/* تنظیمات اسکرول و پایه‌ریزی کلی صفحه */
+html {
+  scroll-behavior: smooth;
+  direction: rtl;
+}
+
+body {
+  background-color: var(--color-dark-950);
+  color: #f3f4f6;
+  font-family: var(--font-vazir);
+  overflow-x: hidden;
+}
+
+/* اسکرول‌بار اختصاصی و لوکس تیره */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0a0a0a;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #262626;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #d4af37;
+}
