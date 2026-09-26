@@ -42,34 +42,25 @@ export default function Hero() {
     >
       {/* پس‌زمینه ویدیویی با اولویت بارگذاری آنی */}
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none select-none">
-        {/* ۱. نسخه موبایل */}
         <video
           autoPlay
           loop
           muted
           playsInline
-          poster="/hero-poster-mobile-1.png"
-          preload="auto"
+          preload="metadata"
+          poster="/poster.webp"
           disablePictureInPicture
           disableRemotePlayback
-          className="md:hidden absolute inset-0 w-full h-full object-cover object-center opacity-80"
+          className="absolute inset-0 w-full h-full object-cover object-center opacity-70"
         >
+          {/* سورس مخصوص دسکتاپ (عرض بالای 768px) */}
+          <source
+            src="/hero-video.mp4"
+            type="video/mp4"
+            media="(min-width: 768px)"
+          />
+          {/* سورس پیش‌فرض مخصوص موبایل */}
           <source src="/hero-video-2.mp4" type="video/mp4" />
-        </video>
-
-        {/* ۲. نسخه دسکتاپ */}
-        <video
-          autoPlay
-          loop
-          muted
-          playsInline
-          poster="/poster.png"
-          preload="auto"
-          disablePictureInPicture
-          disableRemotePlayback
-          className="hidden md:block absolute inset-0 w-full h-full object-cover object-center opacity-65"
-        >
-          <source src="/hero-video.mp4" type="video/mp4" />
         </video>
 
         {/* لایه گرادیان تیره */}
