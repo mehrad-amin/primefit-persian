@@ -133,13 +133,20 @@ export default function FitnessCalculator({ onSelectClassFromCalc }) {
   const calculateFitness = (e) => {
     e.preventDefault();
 
-    // ۱. BMR و TDEE پایه
-    let bmr = 10 * weight + 6.25 * height - 5 * age;
+    // پارس امن مقادیر ورودی به عدد همراه با فال‌بک پیش‌فرض
+    const numWeight = Number(weight) || 70;
+    const numHeight = Number(height) || 175;
+    const numAge = Number(age) || 25;
+
+    // ۱. BMR و TDEE پایه بر اساس اعداد تمیز
+    let bmr = 10 * numWeight + 6.25 * numHeight - 5 * numAge;
     bmr = gender === "male" ? bmr + 5 : bmr - 161;
     const tdee = Math.round(bmr * parseFloat(activity));
 
-    const heightInMeters = height / 100;
-    const initialBmi = (weight / (heightInMeters * heightInMeters)).toFixed(1);
+    const heightInMeters = numHeight / 100;
+    const initialBmi = (numWeight / (heightInMeters * heightInMeters)).toFixed(
+      1,
+    );
 
     // ۲. دریافت کلاس فعال و ضرایب اختصاصی آن
     const activeClass =
@@ -163,7 +170,7 @@ export default function FitnessCalculator({ onSelectClassFromCalc }) {
       const isSkinny = parseFloat(initialBmi) < 20;
       targetCalories = dietCommitment === "pro" ? tdee + 650 : tdee + 400;
 
-      // کلاس بدنسازی ماکزیمم حجم را ایجاد می‌کند، پیلاتس حجم بسیار کمتری می‌سازد
+      // کلاس بدنسازی ماکزیمم حجم را ایجاد می‌کند، پیلاتس حجم کمتر و متمرکز بر فرم‌دهی
       const bulkBase = isSkinny ? 3.6 : 2.6;
       baseMinGainOrLoss = bulkBase * dietMultiplier * classMetrics.muscle;
       baseMaxGainOrLoss =
@@ -175,7 +182,7 @@ export default function FitnessCalculator({ onSelectClassFromCalc }) {
           : Math.max(1350, tdee - 450);
       const isOverweight = parseFloat(initialBmi) > 26;
 
-      // کراس‌فیت و تمرینات سرعتی چربی‌سوزی را به اوج می‌رسانند
+      // کراس‌فیت و تمرینات سرعتی چربی‌سوزی را شتاب می‌دهند
       const cutBase = isOverweight ? 4.2 : 2.8;
       baseMinGainOrLoss = cutBase * dietMultiplier * classMetrics.burn;
       baseMaxGainOrLoss = (cutBase + 2.5) * dietMultiplier * classMetrics.burn;
@@ -191,8 +198,8 @@ export default function FitnessCalculator({ onSelectClassFromCalc }) {
 
     const projectedWeight =
       goal === "cut"
-        ? (weight - avgDelta).toFixed(1)
-        : (weight + avgDelta).toFixed(1);
+        ? (numWeight - avgDelta).toFixed(1)
+        : (numWeight + avgDelta).toFixed(1);
 
     const projectedBmi = (
       projectedWeight /
@@ -201,8 +208,8 @@ export default function FitnessCalculator({ onSelectClassFromCalc }) {
 
     const suggestedProtein =
       goal === "bulk"
-        ? Math.round(weight * 2.2 * (classMetrics.muscle > 1 ? 1.05 : 0.95))
-        : Math.round(weight * 1.9);
+        ? Math.round(numWeight * 2.2 * (classMetrics.muscle > 1 ? 1.05 : 0.95))
+        : Math.round(numWeight * 1.9);
 
     // توضیحات هوشمند بر اساس نوع کلاس
     const isStrength = classMetrics.muscle > 1.1;
@@ -214,8 +221,8 @@ export default function FitnessCalculator({ onSelectClassFromCalc }) {
         title: "هفته دوم: فاز سازگاری عضلانی",
         projectedW:
           goal === "cut"
-            ? (weight - avgDelta * 0.22).toFixed(1)
-            : (weight + avgDelta * 0.22).toFixed(1),
+            ? (numWeight - avgDelta * 0.22).toFixed(1)
+            : (numWeight + avgDelta * 0.22).toFixed(1),
         note: isStrength
           ? "افزایش اشتها، پمپاژ بیشتر خون به عضلات و جذب گلیکوژن"
           : isCardio
@@ -227,8 +234,8 @@ export default function FitnessCalculator({ onSelectClassFromCalc }) {
         title: "هفته چهارم: فاز تثبیت متابولیک",
         projectedW:
           goal === "cut"
-            ? (weight - avgDelta * 0.48).toFixed(1)
-            : (weight + avgDelta * 0.48).toFixed(1),
+            ? (numWeight - avgDelta * 0.48).toFixed(1)
+            : (numWeight + avgDelta * 0.48).toFixed(1),
         note: isStrength
           ? "افزایش رکورد وزنه‌ها و شروع پر شدن و هایپرتروفی عضلات"
           : isCardio
@@ -240,8 +247,8 @@ export default function FitnessCalculator({ onSelectClassFromCalc }) {
         title: "هفته ششم: فاز نمایان شدن تغییرات",
         projectedW:
           goal === "cut"
-            ? (weight - avgDelta * 0.74).toFixed(1)
-            : (weight + avgDelta * 0.74).toFixed(1),
+            ? (numWeight - avgDelta * 0.74).toFixed(1)
+            : (numWeight + avgDelta * 0.74).toFixed(1),
         note: isStrength
           ? "تفکیک خطوط سرشانه، بازو و سینه با تراکم بالای بافت عضلانی"
           : isCardio
@@ -356,48 +363,81 @@ export default function FitnessCalculator({ onSelectClassFromCalc }) {
             </div>
 
             {/* ورودی سن، قد و وزن */}
+            {/* ورودی سن، قد و وزن — بهینه‌شده برای موبایل بدون حالت شمارنده */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {/* سن */}
               <div>
                 <label className="block text-xs font-bold text-neutral-300 mb-1.5 text-right">
-                  {calcData.ageLabel}
+                  {calcData.ageLabel || "سن (سال)"}
                 </label>
-                <input
-                  type="number"
-                  min="14"
-                  max="85"
-                  value={age}
-                  onChange={(e) => setAge(Number(e.target.value))}
-                  className="w-full bg-dark-800 border border-neutral-700 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-gold-500 text-right"
-                  required
-                />
+                <div className="relative">
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    value={age || ""}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/[^0-9]/g, "");
+                      setAge(val === "" ? "" : Number(val));
+                    }}
+                    placeholder="مثلاً ۲۴"
+                    className="w-full bg-dark-800 border border-neutral-700 rounded-xl px-4 py-3.5 text-white text-base sm:text-sm focus:outline-none focus:border-gold-500 text-center font-english [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none transition-colors"
+                    required
+                  />
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-neutral-500 pointer-events-none font-vazir">
+                    سال
+                  </span>
+                </div>
               </div>
+
+              {/* قد */}
               <div>
                 <label className="block text-xs font-bold text-neutral-300 mb-1.5 text-right">
-                  {calcData.heightLabel}
+                  {calcData.heightLabel || "قد (سانتی‌متر)"}
                 </label>
-                <input
-                  type="number"
-                  min="120"
-                  max="230"
-                  value={height}
-                  onChange={(e) => setHeight(Number(e.target.value))}
-                  className="w-full bg-dark-800 border border-neutral-700 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-gold-500 text-right"
-                  required
-                />
+                <div className="relative">
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    value={height || ""}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/[^0-9]/g, "");
+                      setHeight(val === "" ? "" : Number(val));
+                    }}
+                    placeholder="مثلاً ۱۸۰"
+                    className="w-full bg-dark-800 border border-neutral-700 rounded-xl px-4 py-3.5 text-white text-base sm:text-sm focus:outline-none focus:border-gold-500 text-center font-english [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none transition-colors"
+                    required
+                  />
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-neutral-500 pointer-events-none font-vazir">
+                    cm
+                  </span>
+                </div>
               </div>
+
+              {/* وزن */}
               <div>
                 <label className="block text-xs font-bold text-neutral-300 mb-1.5 text-right">
-                  {calcData.weightLabel}
+                  {calcData.weightLabel || "وزن فعلی (کیلوگرم)"}
                 </label>
-                <input
-                  type="number"
-                  min="35"
-                  max="220"
-                  value={weight}
-                  onChange={(e) => setWeight(Number(e.target.value))}
-                  className="w-full bg-dark-800 border border-neutral-700 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-gold-500 text-right"
-                  required
-                />
+                <div className="relative">
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    value={weight || ""}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/[^0-9]/g, "");
+                      setWeight(val === "" ? "" : Number(val));
+                    }}
+                    placeholder="مثلاً ۷۵"
+                    className="w-full bg-dark-800 border border-neutral-700 rounded-xl px-4 py-3.5 text-white text-base sm:text-sm focus:outline-none focus:border-gold-500 text-center font-english [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none transition-colors"
+                    required
+                  />
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-neutral-500 pointer-events-none font-vazir">
+                    kg
+                  </span>
+                </div>
               </div>
             </div>
 
