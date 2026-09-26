@@ -122,7 +122,7 @@ export const clubData = {
         ],
         images: [
           {
-            url: "https://images.unsplash.com/photo-1518611012118-696072aa579a?q=80&w=1000&auto=format&fit=crop",
+            url: "/images/test-2.jpg",
             title: "استودیوی کاردیو و چربی‌سوزی بانوان",
           },
           {
@@ -380,8 +380,7 @@ export const clubData = {
           "متخصص آمادگی جسمانی مسابقاتی CSCS",
           "مربی رسمی درجه ۱ فدراسیون بدنسازی",
         ],
-        image:
-          "https://images.unsplash.com/photo-1567013127542-490d757e51fc?q=80&w=800&auto=format&fit=crop",
+        image: "/images/coach-2.webp",
       },
       {
         id: 2,
@@ -394,22 +393,20 @@ export const clubData = {
           "سرتیفیکیت جامع کار با دستگاه‌های پیلاتس Comprehensive",
           "گواهینامه تخصص تمرینات دوران بارداری و بازیابی فرم",
         ],
-        image:
-          "https://images.unsplash.com/photo-1594381898411-846e7d193883?q=80&w=800&auto=format&fit=crop",
+        image: "/images/coach-lady.jpg",
       },
       {
         id: 3,
         name: "آرمین راد",
         role: "مسئول تمرینات عملکردی و کراس‌فیت",
         experience: "+۱۲ سال سابقه قهرمانی و مربیگری حرفه‌ای",
-        specialty: "وزنه‌برداری یک‌ضرب و دوعرب، چابکی و توان عملکردی",
+        specialty: "وزنه‌برداری یک‌ضرب و دوضرب، چابکی و توان عملکردی",
         credentials: [
           "مربی رسمی بین‌المللی CrossFit Level 3",
           "گواهینامه تخصصی وزنه‌برداری المپیک USAW",
           "مدرک ارشد تغذیه ورزشی کاربردی Precision Nutrition",
         ],
-        image:
-          "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=800&auto=format&fit=crop",
+        image: "/images/test.jpg",
       },
     ],
   },
