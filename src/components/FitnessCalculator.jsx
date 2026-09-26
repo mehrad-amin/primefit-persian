@@ -34,10 +34,12 @@ export default function FitnessCalculator({ onSelectClassFromCalc }) {
   const [dietCommitment, setDietCommitment] = useState(
     calcData.dietOptions?.[0]?.id || "pro",
   );
-  const [selectedClassId, setSelectedClassId] = useState("");
+  const [selectedClassId, setSelectedClassId] = useState(
+    initialClasses[0]?.id ? String(initialClasses[0].id) : "",
+  );
   const [result, setResult] = useState(null);
 
-  // واکشی لایو کلاس‌ها
+  // واکشی داده‌های زنده کلاس‌ها بدون رندرهای آبشاری
   useEffect(() => {
     let isMounted = true;
     async function loadLiveClasses() {
@@ -51,9 +53,9 @@ export default function FitnessCalculator({ onSelectClassFromCalc }) {
             isMounted
           ) {
             setClassesList(data.classes);
-            if (!selectedClassId) {
-              setSelectedClassId(data.classes[0].id || "1");
-            }
+            setSelectedClassId(
+              (prev) => prev || String(data.classes[0].id || "1"),
+            );
           }
         }
       } catch (err) {
@@ -67,21 +69,14 @@ export default function FitnessCalculator({ onSelectClassFromCalc }) {
     };
   }, []);
 
-  useEffect(() => {
-    if (!selectedClassId && classesList.length > 0) {
-      setSelectedClassId(classesList[0].id || "1");
-    }
-  }, [classesList, selectedClassId]);
-
   if (!showCalculator) return null;
 
-  // محاسبه ضرایب تأثیر فیزیولوژیک کلاس ورزشی
+  // ضرایب ماهیت کلاس ورزشی
   const getClassMultipliers = (classItem) => {
     if (!classItem)
       return { muscle: 1.0, burn: 1.0, typeLabel: "تمرینات عمومی" };
     const title = (classItem.title || "").toLowerCase();
 
-    // ۱. تمرینات هایپرتروفی و مقاومتی (بدنسازی با وزنه، فیتنس قدرتی)
     if (
       title.includes("بدنسازی") ||
       title.includes("وزنه") ||
@@ -95,7 +90,6 @@ export default function FitnessCalculator({ onSelectClassFromCalc }) {
       };
     }
 
-    // ۲. تمرینات سرعتی، چربی‌سوزی بالا و کراس‌فیت (HIIT)
     if (
       title.includes("کراس") ||
       title.includes("hiit") ||
@@ -109,7 +103,6 @@ export default function FitnessCalculator({ onSelectClassFromCalc }) {
       };
     }
 
-    // ۳. پیلاتس، یوگا، حرکات اصلاحی و انعطاف‌پذیری
     if (
       title.includes("پیلاتس") ||
       title.includes("یوگا") ||
@@ -133,28 +126,42 @@ export default function FitnessCalculator({ onSelectClassFromCalc }) {
   const calculateFitness = (e) => {
     e.preventDefault();
 
-    // پارس امن مقادیر ورودی به عدد همراه با فال‌بک پیش‌فرض
+    // ۱. پارس عددی امن اینپوت‌ها برای جلوگیری از بروز NaN
     const numWeight = Number(weight) || 70;
     const numHeight = Number(height) || 175;
     const numAge = Number(age) || 25;
+    const actVal = parseFloat(activity) || 1.55;
 
-    // ۱. BMR و TDEE پایه بر اساس اعداد تمیز
+    // ۲. BMR و TDEE پایه
     let bmr = 10 * numWeight + 6.25 * numHeight - 5 * numAge;
     bmr = gender === "male" ? bmr + 5 : bmr - 161;
-    const tdee = Math.round(bmr * parseFloat(activity));
+    const tdee = Math.round(bmr * actVal);
 
     const heightInMeters = numHeight / 100;
     const initialBmi = (numWeight / (heightInMeters * heightInMeters)).toFixed(
       1,
     );
 
-    // ۲. دریافت کلاس فعال و ضرایب اختصاصی آن
+    // ۳. کلاس فعال و ضرایب تمرینی
     const activeClass =
       classesList.find((c) => String(c.id) === String(selectedClassId)) ||
       classesList[0];
     const classMetrics = getClassMultipliers(activeClass);
 
-    // ۳. ضریب پایبندی به رژیم غذایی
+    // ۴. ضریب بسامد تمرین (تعداد روزهای حضور در باشگاه)
+    // 1.2: پشت میز نشین | 1.375: ۱-۳ روز | 1.55: ۳-۵ روز | 1.725: ۶-۷ روز
+    let activityMultiplier = 1.0;
+    if (actVal <= 1.25) {
+      activityMultiplier = 0.65; // حضور نداشتن در باشگاه یا حداقل فعالیت
+    } else if (actVal <= 1.45) {
+      activityMultiplier = 0.85; // ۱ تا ۳ روز در هفته
+    } else if (actVal <= 1.65) {
+      activityMultiplier = 1.12; // ۳ تا ۵ روز منظم
+    } else {
+      activityMultiplier = 1.38; // ۶ تا ۷ روز فشرده
+    }
+
+    // ۵. ضریب پایبندی به رژیم غذایی
     const dietMultiplier =
       dietCommitment === "pro"
         ? 1.35
@@ -170,11 +177,14 @@ export default function FitnessCalculator({ onSelectClassFromCalc }) {
       const isSkinny = parseFloat(initialBmi) < 20;
       targetCalories = dietCommitment === "pro" ? tdee + 650 : tdee + 400;
 
-      // کلاس بدنسازی ماکزیمم حجم را ایجاد می‌کند، پیلاتس حجم کمتر و متمرکز بر فرم‌دهی
-      const bulkBase = isSkinny ? 3.6 : 2.6;
-      baseMinGainOrLoss = bulkBase * dietMultiplier * classMetrics.muscle;
+      const bulkBase = isSkinny ? 3.4 : 2.5;
+      baseMinGainOrLoss =
+        bulkBase * dietMultiplier * classMetrics.muscle * activityMultiplier;
       baseMaxGainOrLoss =
-        (bulkBase + 2.4) * dietMultiplier * classMetrics.muscle;
+        (bulkBase + 2.2) *
+        dietMultiplier *
+        classMetrics.muscle *
+        activityMultiplier;
     } else if (goal === "cut") {
       targetCalories =
         dietCommitment === "pro"
@@ -182,18 +192,24 @@ export default function FitnessCalculator({ onSelectClassFromCalc }) {
           : Math.max(1350, tdee - 450);
       const isOverweight = parseFloat(initialBmi) > 26;
 
-      // کراس‌فیت و تمرینات سرعتی چربی‌سوزی را شتاب می‌دهند
-      const cutBase = isOverweight ? 4.2 : 2.8;
-      baseMinGainOrLoss = cutBase * dietMultiplier * classMetrics.burn;
-      baseMaxGainOrLoss = (cutBase + 2.5) * dietMultiplier * classMetrics.burn;
+      const cutBase = isOverweight ? 3.8 : 2.6;
+      baseMinGainOrLoss =
+        cutBase * dietMultiplier * classMetrics.burn * activityMultiplier;
+      baseMaxGainOrLoss =
+        (cutBase + 2.4) *
+        dietMultiplier *
+        classMetrics.burn *
+        activityMultiplier;
     } else {
       targetCalories = tdee;
-      baseMinGainOrLoss = 1.0 * dietMultiplier * classMetrics.muscle;
-      baseMaxGainOrLoss = 2.0 * dietMultiplier * classMetrics.muscle;
+      baseMinGainOrLoss =
+        1.0 * dietMultiplier * classMetrics.muscle * activityMultiplier;
+      baseMaxGainOrLoss =
+        2.0 * dietMultiplier * classMetrics.muscle * activityMultiplier;
     }
 
-    const minDelta = Math.max(0.6, baseMinGainOrLoss).toFixed(1);
-    const maxDelta = Math.max(1.2, baseMaxGainOrLoss).toFixed(1);
+    const minDelta = Math.max(0.5, baseMinGainOrLoss).toFixed(1);
+    const maxDelta = Math.max(1.1, baseMaxGainOrLoss).toFixed(1);
     const avgDelta = (parseFloat(minDelta) + parseFloat(maxDelta)) / 2;
 
     const projectedWeight =
@@ -211,22 +227,21 @@ export default function FitnessCalculator({ onSelectClassFromCalc }) {
         ? Math.round(numWeight * 2.2 * (classMetrics.muscle > 1 ? 1.05 : 0.95))
         : Math.round(numWeight * 1.9);
 
-    // توضیحات هوشمند بر اساس نوع کلاس
     const isStrength = classMetrics.muscle > 1.1;
     const isCardio = classMetrics.burn > 1.2;
 
     const milestones = [
       {
         week: 2,
-        title: "هفته دوم: فاز سازگاری عضلانی",
+        title: "هفته دوم: فاز سازگاری اولیه",
         projectedW:
           goal === "cut"
             ? (numWeight - avgDelta * 0.22).toFixed(1)
             : (numWeight + avgDelta * 0.22).toFixed(1),
         note: isStrength
-          ? "افزایش اشتها، پمپاژ بیشتر خون به عضلات و جذب گلیکوژن"
+          ? "افزایش اشتها، پمپاژ خون به عضلات و جذب گلیکوژن"
           : isCardio
-            ? "دفع سریع احتباس آب زیرپوستی و افزایش ظرفیت ریوی"
+            ? "دفع سریع احتباس آب زیرپوستی و ارتقای ظرفیت تنفسی"
             : "بهبود فرم ستون فقرات و انعطاف مفاصل",
       },
       {
@@ -237,7 +252,7 @@ export default function FitnessCalculator({ onSelectClassFromCalc }) {
             ? (numWeight - avgDelta * 0.48).toFixed(1)
             : (numWeight + avgDelta * 0.48).toFixed(1),
         note: isStrength
-          ? "افزایش رکورد وزنه‌ها و شروع پر شدن و هایپرتروفی عضلات"
+          ? "افزایش رکورد وزنه‌ها و شروع پر شدن بافت عضلات"
           : isCardio
             ? "کاهش مشهود سایز دور شکم و افزایش توان بی‌هوازی"
             : "سفت شدن عضلات عمقی شکم و فرم‌گیری بالاتنه",
@@ -250,7 +265,7 @@ export default function FitnessCalculator({ onSelectClassFromCalc }) {
             ? (numWeight - avgDelta * 0.74).toFixed(1)
             : (numWeight + avgDelta * 0.74).toFixed(1),
         note: isStrength
-          ? "تفکیک خطوط سرشانه، بازو و سینه با تراکم بالای بافت عضلانی"
+          ? "تفکیک خطوط سرشانه، بازو و سینه با تراکم بالای عضلانی"
           : isCardio
             ? "کاهش چشمگیر چربی احشایی و باریک شدن دور کمر"
             : "کاهش انحرافات پاسچر بدنی و بالا آمدن استقامت ایزومتریک",
@@ -362,10 +377,8 @@ export default function FitnessCalculator({ onSelectClassFromCalc }) {
               </div>
             </div>
 
-            {/* ورودی سن، قد و وزن */}
-            {/* ورودی سن، قد و وزن — بهینه‌شده برای موبایل بدون حالت شمارنده */}
+            {/* ورودی سن، قد و وزن با پشتیبانی کامل تایپ و حذف استپرهای موبایل */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              {/* سن */}
               <div>
                 <label className="block text-xs font-bold text-neutral-300 mb-1.5 text-right">
                   {calcData.ageLabel || "سن (سال)"}
@@ -375,13 +388,13 @@ export default function FitnessCalculator({ onSelectClassFromCalc }) {
                     type="text"
                     inputMode="numeric"
                     pattern="[0-9]*"
-                    value={age || ""}
+                    value={age ?? ""}
                     onChange={(e) => {
                       const val = e.target.value.replace(/[^0-9]/g, "");
                       setAge(val === "" ? "" : Number(val));
                     }}
                     placeholder="مثلاً ۲۴"
-                    className="w-full bg-dark-800 border border-neutral-700 rounded-xl px-4 py-3.5 text-white text-base sm:text-sm focus:outline-none focus:border-gold-500 text-center font-english [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none transition-colors"
+                    className="w-full bg-dark-800 border border-neutral-700 rounded-xl px-4 py-3.5 text-white text-base sm:text-sm focus:outline-none focus:border-gold-500 text-center font-english transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     required
                   />
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-neutral-500 pointer-events-none font-vazir">
@@ -390,7 +403,6 @@ export default function FitnessCalculator({ onSelectClassFromCalc }) {
                 </div>
               </div>
 
-              {/* قد */}
               <div>
                 <label className="block text-xs font-bold text-neutral-300 mb-1.5 text-right">
                   {calcData.heightLabel || "قد (سانتی‌متر)"}
@@ -400,13 +412,13 @@ export default function FitnessCalculator({ onSelectClassFromCalc }) {
                     type="text"
                     inputMode="numeric"
                     pattern="[0-9]*"
-                    value={height || ""}
+                    value={height ?? ""}
                     onChange={(e) => {
                       const val = e.target.value.replace(/[^0-9]/g, "");
                       setHeight(val === "" ? "" : Number(val));
                     }}
                     placeholder="مثلاً ۱۸۰"
-                    className="w-full bg-dark-800 border border-neutral-700 rounded-xl px-4 py-3.5 text-white text-base sm:text-sm focus:outline-none focus:border-gold-500 text-center font-english [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none transition-colors"
+                    className="w-full bg-dark-800 border border-neutral-700 rounded-xl px-4 py-3.5 text-white text-base sm:text-sm focus:outline-none focus:border-gold-500 text-center font-english transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     required
                   />
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-neutral-500 pointer-events-none font-vazir">
@@ -415,7 +427,6 @@ export default function FitnessCalculator({ onSelectClassFromCalc }) {
                 </div>
               </div>
 
-              {/* وزن */}
               <div>
                 <label className="block text-xs font-bold text-neutral-300 mb-1.5 text-right">
                   {calcData.weightLabel || "وزن فعلی (کیلوگرم)"}
@@ -425,13 +436,13 @@ export default function FitnessCalculator({ onSelectClassFromCalc }) {
                     type="text"
                     inputMode="numeric"
                     pattern="[0-9]*"
-                    value={weight || ""}
+                    value={weight ?? ""}
                     onChange={(e) => {
                       const val = e.target.value.replace(/[^0-9]/g, "");
                       setWeight(val === "" ? "" : Number(val));
                     }}
                     placeholder="مثلاً ۷۵"
-                    className="w-full bg-dark-800 border border-neutral-700 rounded-xl px-4 py-3.5 text-white text-base sm:text-sm focus:outline-none focus:border-gold-500 text-center font-english [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none transition-colors"
+                    className="w-full bg-dark-800 border border-neutral-700 rounded-xl px-4 py-3.5 text-white text-base sm:text-sm focus:outline-none focus:border-gold-500 text-center font-english transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     required
                   />
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-neutral-500 pointer-events-none font-vazir">
@@ -441,7 +452,7 @@ export default function FitnessCalculator({ onSelectClassFromCalc }) {
               </div>
             </div>
 
-            {/* سه عامل کلیدی: فعالیت، هدف و تغذیه */}
+            {/* فعالیت، هدف و برنامه غذایی */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
                 <label className="block text-xs font-bold text-neutral-300 mb-1.5 text-right">
@@ -486,7 +497,7 @@ export default function FitnessCalculator({ onSelectClassFromCalc }) {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-gold-400 mb-1.5 text-right flex items-center justify-between">
+                <label className="text-xs font-bold text-gold-400 mb-1.5 text-right flex items-center justify-between">
                   <span className="flex items-center gap-1.5">
                     <Utensils className="w-3.5 h-3.5" />
                     {calcData.dietLabel || "برنامه و رژیم غذایی"}
@@ -515,7 +526,7 @@ export default function FitnessCalculator({ onSelectClassFromCalc }) {
 
             {/* کلاس انتخابی باشگاه */}
             <div>
-              <label className="block text-xs font-bold text-neutral-300 mb-1.5 text-right flex items-center justify-between">
+              <label className="text-xs font-bold text-neutral-300 mb-1.5 text-right flex items-center justify-between">
                 <span>{calcData.classLabel || "کلاس مدنظر شما در باشگاه"}</span>
                 <span className="text-[10px] text-gold-400 font-normal">
                   تأثیر مستقیم بر نوع و میزان بافت عضله یا چربی
@@ -646,7 +657,7 @@ export default function FitnessCalculator({ onSelectClassFromCalc }) {
                           {calcData.milestonePhasePrefix?.replace(
                             "{week}",
                             ms.week,
-                          ) || `هفته ${ms.week} از ۸`}
+                          ) || `هفته ${ms.week} از 8`}
                         </div>
                       </div>
                     ))}
@@ -696,7 +707,7 @@ export default function FitnessCalculator({ onSelectClassFromCalc }) {
                 </div>
               </div>
 
-              {/* اکشن‌های رزرو صندلی و مشاوره واتس‌اپ */}
+              {/* اکشن‌های رزرو صندلی و واتس‌اپ */}
               <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
                 <a
                   href="#schedule"
