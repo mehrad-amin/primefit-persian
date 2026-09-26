@@ -59,6 +59,23 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="fa" dir="rtl" className={`${vazirmatn.variable}`}>
+      <head>
+        {/* پری‌لود پوستر برای نمایش میلی‌ثانیه‌ای عکس */}
+        <link rel="preload" as="image" href="/hero-poster-mobile-1.png" />
+        {/* پری‌لود خود ویدیو با اولویت بالا */}
+        <link
+          rel="preload"
+          as="video"
+          href="/hero-video-2.mp4"
+          type="video/mp4"
+        />
+        <link
+          rel="preload"
+          as="video"
+          href="/hero-video.mp4"
+          type="video/mp4"
+        />
+      </head>
       <body className="bg-dark-950 text-neutral-100 antialiased selection:bg-gold-500 selection:text-dark-950 min-h-screen flex flex-col font-vazir">
         {children}
       </body>

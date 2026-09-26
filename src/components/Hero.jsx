@@ -10,25 +10,27 @@ export default function Hero() {
     clubData.brand?.defaultWaMessage || "",
   )}`;
 
+  // تنظیم انیمیشن بدون پنهان ماندن اولیه محتوا در SSR
   const containerVariants = {
-    hidden: { opacity: 0 },
+    hidden: { opacity: 0.9, y: 10 },
     visible: {
       opacity: 1,
+      y: 0,
       transition: {
-        staggerChildren: 0.12,
-        delayChildren: 0.05,
+        duration: 0.4,
+        staggerChildren: 0.08,
       },
     },
   };
 
   const itemVariants = {
-    hidden: { opacity: 0, y: 18 },
+    hidden: { opacity: 0.9, y: 8 },
     visible: {
       opacity: 1,
       y: 0,
       transition: {
-        duration: 0.6,
-        ease: [0.22, 1, 0.36, 1],
+        duration: 0.35,
+        ease: "easeOut",
       },
     },
   };
@@ -38,16 +40,18 @@ export default function Hero() {
       dir="rtl"
       className="relative min-h-[92vh] lg:min-h-screen flex items-center justify-center pt-28 pb-16 overflow-hidden bg-dark-950 font-vazir"
     >
-      {/* پس‌زمینه بهینه ویدیویی */}
+      {/* پس‌زمینه ویدیویی با اولویت بارگذاری آنی */}
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none select-none">
-        {/* ۱. نسخه موبایل (بدون فیلترهای سنگین کنتراست) */}
+        {/* ۱. نسخه موبایل */}
         <video
           autoPlay
           loop
           muted
           playsInline
-          poster="/hero-poster-mobile.png"
-          preload="metadata"
+          poster="/hero-poster-mobile-1.png"
+          preload="auto"
+          disablePictureInPicture
+          disableRemotePlayback
           className="md:hidden absolute inset-0 w-full h-full object-cover object-center opacity-80"
         >
           <source src="/hero-video-2.mp4" type="video/mp4" />
@@ -60,13 +64,15 @@ export default function Hero() {
           muted
           playsInline
           poster="/poster.png"
-          preload="metadata"
+          preload="auto"
+          disablePictureInPicture
+          disableRemotePlayback
           className="hidden md:block absolute inset-0 w-full h-full object-cover object-center opacity-65"
         >
           <source src="/hero-video.mp4" type="video/mp4" />
         </video>
 
-        {/* لایه گرادیان تیره ملایم */}
+        {/* لایه گرادیان تیره */}
         <div className="absolute inset-0 bg-gradient-to-b from-dark-950/60 via-transparent to-dark-950" />
       </div>
 
@@ -108,7 +114,7 @@ export default function Hero() {
           variants={itemVariants}
           className="mt-10 grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-xl mx-auto w-full items-stretch"
         >
-          {/* دکمه ۱: ثبت‌نام و فرم ارزیابی */}
+          {/* دکمه ۱: فرم ارزیابی */}
           <a
             href="#lead-capture"
             className="w-full flex items-center justify-center gap-2 px-5 py-4 rounded-xl text-sm md:text-base font-bold text-dark-950 bg-gradient-to-r from-gold-400 to-gold-500 hover:from-gold-300 hover:to-gold-400 shadow-xl shadow-gold-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 text-center whitespace-nowrap transform-gpu"
