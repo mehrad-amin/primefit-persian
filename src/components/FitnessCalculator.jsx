@@ -1,57 +1,299 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { clubData } from "../config/clubData.js";
-import { Calculator, Flame, Scale, Dumbbell } from "lucide-react";
+import {
+  Calculator,
+  Flame,
+  Scale,
+  Dumbbell,
+  Sparkles,
+  Utensils,
+  CalendarCheck,
+  CheckCircle2,
+  TrendingUp,
+  TrendingDown,
+  Activity,
+} from "lucide-react";
 
-export default function FitnessCalculator() {
+export default function FitnessCalculator({ onSelectClassFromCalc }) {
   const showCalculator = Boolean(clubData.features?.showCalculator);
-  const calculator = clubData.calculator || {};
+  const calcData = clubData.calculator || {};
+
+  const initialClasses = clubData.schedule?.classes || [];
+  const [classesList, setClassesList] = useState(initialClasses);
 
   const [gender, setGender] = useState("male");
-  const [age, setAge] = useState(28);
-  const [height, setHeight] = useState(175);
-  const [weight, setWeight] = useState(80);
-  const [activity, setActivity] = useState("1.55");
-  const [goal, setGoal] = useState("cut");
+  const [age, setAge] = useState(23);
+  const [height, setHeight] = useState(180);
+  const [weight, setWeight] = useState(60);
+  const [activity, setActivity] = useState(
+    calcData.activityLevels?.[2]?.value || "1.55",
+  );
+  const [goal, setGoal] = useState("bulk");
+  const [dietCommitment, setDietCommitment] = useState(
+    calcData.dietOptions?.[0]?.id || "pro",
+  );
+  const [selectedClassId, setSelectedClassId] = useState("");
   const [result, setResult] = useState(null);
 
+  // واکشی لایو کلاس‌ها
+  useEffect(() => {
+    let isMounted = true;
+    async function loadLiveClasses() {
+      try {
+        const res = await fetch("/api/schedule");
+        if (res.ok) {
+          const data = await res.json();
+          if (
+            Array.isArray(data.classes) &&
+            data.classes.length > 0 &&
+            isMounted
+          ) {
+            setClassesList(data.classes);
+            if (!selectedClassId) {
+              setSelectedClassId(data.classes[0].id || "1");
+            }
+          }
+        }
+      } catch (err) {
+        console.error("خطا در بارگذاری کلاس‌های زنده:", err);
+      }
+    }
+
+    loadLiveClasses();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!selectedClassId && classesList.length > 0) {
+      setSelectedClassId(classesList[0].id || "1");
+    }
+  }, [classesList, selectedClassId]);
+
   if (!showCalculator) return null;
+
+  // محاسبه ضرایب تأثیر فیزیولوژیک کلاس ورزشی
+  const getClassMultipliers = (classItem) => {
+    if (!classItem)
+      return { muscle: 1.0, burn: 1.0, typeLabel: "تمرینات عمومی" };
+    const title = (classItem.title || "").toLowerCase();
+
+    // ۱. تمرینات هایپرتروفی و مقاومتی (بدنسازی با وزنه، فیتنس قدرتی)
+    if (
+      title.includes("بدنسازی") ||
+      title.includes("وزنه") ||
+      title.includes("قدرت") ||
+      title.includes("فیتنس")
+    ) {
+      return {
+        muscle: 1.35,
+        burn: 1.05,
+        typeLabel: "تمرکز بر هایپرتروفی و افزایش فیبر عضلانی",
+      };
+    }
+
+    // ۲. تمرینات سرعتی، چربی‌سوزی بالا و کراس‌فیت (HIIT)
+    if (
+      title.includes("کراس") ||
+      title.includes("hiit") ||
+      title.includes("سرعت") ||
+      title.includes("هوازی")
+    ) {
+      return {
+        muscle: 0.95,
+        burn: 1.45,
+        typeLabel: "تمرکز بر توان هوازی و ماکزیمم چربی‌سوزی",
+      };
+    }
+
+    // ۳. پیلاتس، یوگا، حرکات اصلاحی و انعطاف‌پذیری
+    if (
+      title.includes("پیلاتس") ||
+      title.includes("یوگا") ||
+      title.includes("اصلاح") ||
+      title.includes("فرم‌دهی")
+    ) {
+      return {
+        muscle: 0.72,
+        burn: 0.88,
+        typeLabel: "تمرکز بر تقویت عضلات مرکزی (Core) و انعطاف",
+      };
+    }
+
+    return {
+      muscle: 1.0,
+      burn: 1.0,
+      typeLabel: "تمرینات ترکیبی آمادگی جسمانی",
+    };
+  };
 
   const calculateFitness = (e) => {
     e.preventDefault();
 
+    // ۱. BMR و TDEE پایه
     let bmr = 10 * weight + 6.25 * height - 5 * age;
     bmr = gender === "male" ? bmr + 5 : bmr - 161;
-
     const tdee = Math.round(bmr * parseFloat(activity));
 
-    let targetCalories = tdee;
-    if (goal === "cut") targetCalories = Math.max(1200, tdee - 500);
-    if (goal === "bulk") targetCalories = tdee + 400;
-
     const heightInMeters = height / 100;
-    const bmi = (weight / (heightInMeters * heightInMeters)).toFixed(1);
+    const initialBmi = (weight / (heightInMeters * heightInMeters)).toFixed(1);
 
-    const suggestedProtein = Math.round(weight * 2.0);
+    // ۲. دریافت کلاس فعال و ضرایب اختصاصی آن
+    const activeClass =
+      classesList.find((c) => String(c.id) === String(selectedClassId)) ||
+      classesList[0];
+    const classMetrics = getClassMultipliers(activeClass);
+
+    // ۳. ضریب پایبندی به رژیم غذایی
+    const dietMultiplier =
+      dietCommitment === "pro"
+        ? 1.35
+        : dietCommitment === "standard"
+          ? 0.95
+          : 0.45;
+
+    let baseMinGainOrLoss = 0;
+    let baseMaxGainOrLoss = 0;
+    let targetCalories = tdee;
+
+    if (goal === "bulk") {
+      const isSkinny = parseFloat(initialBmi) < 20;
+      targetCalories = dietCommitment === "pro" ? tdee + 650 : tdee + 400;
+
+      // کلاس بدنسازی ماکزیمم حجم را ایجاد می‌کند، پیلاتس حجم بسیار کمتری می‌سازد
+      const bulkBase = isSkinny ? 3.6 : 2.6;
+      baseMinGainOrLoss = bulkBase * dietMultiplier * classMetrics.muscle;
+      baseMaxGainOrLoss =
+        (bulkBase + 2.4) * dietMultiplier * classMetrics.muscle;
+    } else if (goal === "cut") {
+      targetCalories =
+        dietCommitment === "pro"
+          ? Math.max(1250, tdee - 650)
+          : Math.max(1350, tdee - 450);
+      const isOverweight = parseFloat(initialBmi) > 26;
+
+      // کراس‌فیت و تمرینات سرعتی چربی‌سوزی را به اوج می‌رسانند
+      const cutBase = isOverweight ? 4.2 : 2.8;
+      baseMinGainOrLoss = cutBase * dietMultiplier * classMetrics.burn;
+      baseMaxGainOrLoss = (cutBase + 2.5) * dietMultiplier * classMetrics.burn;
+    } else {
+      targetCalories = tdee;
+      baseMinGainOrLoss = 1.0 * dietMultiplier * classMetrics.muscle;
+      baseMaxGainOrLoss = 2.0 * dietMultiplier * classMetrics.muscle;
+    }
+
+    const minDelta = Math.max(0.6, baseMinGainOrLoss).toFixed(1);
+    const maxDelta = Math.max(1.2, baseMaxGainOrLoss).toFixed(1);
+    const avgDelta = (parseFloat(minDelta) + parseFloat(maxDelta)) / 2;
+
+    const projectedWeight =
+      goal === "cut"
+        ? (weight - avgDelta).toFixed(1)
+        : (weight + avgDelta).toFixed(1);
+
+    const projectedBmi = (
+      projectedWeight /
+      (heightInMeters * heightInMeters)
+    ).toFixed(1);
+
+    const suggestedProtein =
+      goal === "bulk"
+        ? Math.round(weight * 2.2 * (classMetrics.muscle > 1 ? 1.05 : 0.95))
+        : Math.round(weight * 1.9);
+
+    // توضیحات هوشمند بر اساس نوع کلاس
+    const isStrength = classMetrics.muscle > 1.1;
+    const isCardio = classMetrics.burn > 1.2;
+
+    const milestones = [
+      {
+        week: 2,
+        title: "هفته دوم: فاز سازگاری عضلانی",
+        projectedW:
+          goal === "cut"
+            ? (weight - avgDelta * 0.22).toFixed(1)
+            : (weight + avgDelta * 0.22).toFixed(1),
+        note: isStrength
+          ? "افزایش اشتها، پمپاژ بیشتر خون به عضلات و جذب گلیکوژن"
+          : isCardio
+            ? "دفع سریع احتباس آب زیرپوستی و افزایش ظرفیت ریوی"
+            : "بهبود فرم ستون فقرات و انعطاف مفاصل",
+      },
+      {
+        week: 4,
+        title: "هفته چهارم: فاز تثبیت متابولیک",
+        projectedW:
+          goal === "cut"
+            ? (weight - avgDelta * 0.48).toFixed(1)
+            : (weight + avgDelta * 0.48).toFixed(1),
+        note: isStrength
+          ? "افزایش رکورد وزنه‌ها و شروع پر شدن و هایپرتروفی عضلات"
+          : isCardio
+            ? "کاهش مشهود سایز دور شکم و افزایش توان بی‌هوازی"
+            : "سفت شدن عضلات عمقی شکم و فرم‌گیری بالاتنه",
+      },
+      {
+        week: 6,
+        title: "هفته ششم: فاز نمایان شدن تغییرات",
+        projectedW:
+          goal === "cut"
+            ? (weight - avgDelta * 0.74).toFixed(1)
+            : (weight + avgDelta * 0.74).toFixed(1),
+        note: isStrength
+          ? "تفکیک خطوط سرشانه، بازو و سینه با تراکم بالای بافت عضلانی"
+          : isCardio
+            ? "کاهش چشمگیر چربی احشایی و باریک شدن دور کمر"
+            : "کاهش انحرافات پاسچر بدنی و بالا آمدن استقامت ایزومتریک",
+      },
+      {
+        week: 8,
+        title: "هفته هشتم: اوج نتیجه و تثبیت نهایی",
+        projectedW: projectedWeight,
+        note: isStrength
+          ? "تثبیت وزن عضلانی ماندگار و ارتقای چشمگیر قدرت فیزیکی"
+          : isCardio
+            ? "رسیدن به درصد چربی تک‌رقمی/ایده‌آل و بیشترین تفکیک عضلانی"
+            : "فرم‌دهی کامل بدن با کنترل عالی تعادل و کشیدگی عضلات",
+      },
+    ];
 
     setResult({
       targetCalories,
       tdee,
-      bmi,
+      bmi: initialBmi,
       suggestedProtein,
+      activeClass,
+      classMetrics,
+      minDelta,
+      maxDelta,
+      projectedWeight,
+      projectedBmi,
+      milestones,
     });
   };
 
   const generateWaMessage = () => {
     if (!result) return "";
-    return `سلام وقت بخیر، نتایج محاسبه هدف فیتنس من در سایت مجموعه:
-- جنسیت: ${gender === "male" ? "آقا" : "خانم"}
-- مشخصات: وزن ${weight} کیلوگرم | قد ${height} سانتی‌متر | سن ${age} سال
-- کالری هدف روزانه: ${Number(result.targetCalories).toLocaleString("fa-IR")} کالری
-- شاخص توده بدنی (BMI): ${Number(result.bmi).toLocaleString("fa-IR")}
-- پروتئین پیشنهادی: ${Number(result.suggestedProtein).toLocaleString("fa-IR")} گرم
-جهت رزرو جلسه ارزیابی تخصصی و شروع برنامه تمرینی پیام می‌دهم.`;
+    const classNameStr = result.activeClass?.title || "کلاس تخصصی باشگاه";
+    const trainerNameStr = result.activeClass?.trainer || "مربی مجموعه";
+
+    const currentGoalLabel =
+      calcData.goals?.find((g) => g.id === goal)?.label || goal;
+    const currentDietLabel =
+      calcData.dietOptions?.find((d) => d.id === dietCommitment)?.label ||
+      dietCommitment;
+
+    return `سلام و وقت بخیر، مایل به ثبت‌نام و دریافت برنامه دوره ۸ هفته‌ای هستم:
+- کلاس انتخابی: ${classNameStr} (مربی: ${trainerNameStr})
+- مشخصات من: وزن ${weight} kg | قد ${height} cm | سن ${age} سال
+- هدف ورزشی: ${currentGoalLabel}
+- سطح تغذیه: ${currentDietLabel}
+- پیش‌بینی تحول ۸ هفته‌ای: ${result.minDelta} تا ${result.maxDelta} کیلوگرم تغییر وزن
+- کالری روزانه پیشنهادی: ${Number(result.targetCalories).toLocaleString("fa-IR")} کالری
+جهت رزرو صندلی و تنظیم زمان ارزیابی حضوری پیام می‌دهم.`;
   };
 
   const waLink = result
@@ -70,21 +312,22 @@ export default function FitnessCalculator() {
         <div className="text-center max-w-3xl mx-auto mb-14">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-dark-850 border border-gold-500/30 text-gold-400 text-xs font-semibold mb-4">
             <Calculator className="w-3.5 h-3.5" />
-            <span>{calculator.badge}</span>
+            <span>{calcData.badge}</span>
           </div>
           <h2 className="text-2xl sm:text-4xl font-black text-white tracking-tight">
-            {calculator.title}
+            {calcData.title}
           </h2>
           <p className="mt-3 text-neutral-400 text-sm sm:text-base leading-relaxed">
-            {calculator.subtitle}
+            {calcData.subtitle}
           </p>
         </div>
 
         <div className="bg-dark-850/90 border border-neutral-800 rounded-3xl p-6 sm:p-10 shadow-2xl backdrop-blur-xl">
           <form onSubmit={calculateFitness} className="space-y-6">
+            {/* انتخاب جنسیت */}
             <div>
               <label className="block text-xs font-bold text-neutral-300 uppercase tracking-wider mb-2 text-right">
-                {calculator.genderLabel}
+                {calcData.genderLabel}
               </label>
               <div className="grid grid-cols-2 gap-3">
                 <button
@@ -96,7 +339,7 @@ export default function FitnessCalculator() {
                       : "bg-dark-800 text-neutral-300 border-neutral-700 hover:border-neutral-600"
                   }`}
                 >
-                  {calculator.male}
+                  {calcData.male}
                 </button>
                 <button
                   type="button"
@@ -107,15 +350,16 @@ export default function FitnessCalculator() {
                       : "bg-dark-800 text-neutral-300 border-neutral-700 hover:border-neutral-600"
                   }`}
                 >
-                  {calculator.female}
+                  {calcData.female}
                 </button>
               </div>
             </div>
 
+            {/* ورودی سن، قد و وزن */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
                 <label className="block text-xs font-bold text-neutral-300 mb-1.5 text-right">
-                  {calculator.ageLabel}
+                  {calcData.ageLabel}
                 </label>
                 <input
                   type="number"
@@ -129,7 +373,7 @@ export default function FitnessCalculator() {
               </div>
               <div>
                 <label className="block text-xs font-bold text-neutral-300 mb-1.5 text-right">
-                  {calculator.heightLabel}
+                  {calcData.heightLabel}
                 </label>
                 <input
                   type="number"
@@ -143,7 +387,7 @@ export default function FitnessCalculator() {
               </div>
               <div>
                 <label className="block text-xs font-bold text-neutral-300 mb-1.5 text-right">
-                  {calculator.weightLabel}
+                  {calcData.weightLabel}
                 </label>
                 <input
                   type="number"
@@ -157,17 +401,18 @@ export default function FitnessCalculator() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* سه عامل کلیدی: فعالیت، هدف و تغذیه */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
                 <label className="block text-xs font-bold text-neutral-300 mb-1.5 text-right">
-                  {calculator.activityLabel}
+                  {calcData.activityLabel}
                 </label>
                 <select
                   value={activity}
                   onChange={(e) => setActivity(e.target.value)}
                   className="w-full bg-dark-800 border border-neutral-700 rounded-xl px-4 py-3 text-white text-xs sm:text-sm focus:outline-none focus:border-gold-500 cursor-pointer text-right"
                 >
-                  {calculator.activityLevels?.map((act, i) => (
+                  {calcData.activityLevels?.map((act, i) => (
                     <option
                       key={i}
                       value={act.value}
@@ -181,14 +426,14 @@ export default function FitnessCalculator() {
 
               <div>
                 <label className="block text-xs font-bold text-neutral-300 mb-1.5 text-right">
-                  {calculator.goalLabel}
+                  {calcData.goalLabel}
                 </label>
                 <select
                   value={goal}
                   onChange={(e) => setGoal(e.target.value)}
                   className="w-full bg-dark-800 border border-neutral-700 rounded-xl px-4 py-3 text-white text-xs sm:text-sm focus:outline-none focus:border-gold-500 cursor-pointer text-right"
                 >
-                  {calculator.goals?.map((g) => (
+                  {calcData.goals?.map((g) => (
                     <option
                       key={g.id}
                       value={g.id}
@@ -199,85 +444,246 @@ export default function FitnessCalculator() {
                   ))}
                 </select>
               </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gold-400 mb-1.5 text-right flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <Utensils className="w-3.5 h-3.5" />
+                    {calcData.dietLabel || "برنامه و رژیم غذایی"}
+                  </span>
+                  <span className="text-[10px] text-neutral-400 font-normal">
+                    {calcData.dietSubtext || "عامل کلیدی"}
+                  </span>
+                </label>
+                <select
+                  value={dietCommitment}
+                  onChange={(e) => setDietCommitment(e.target.value)}
+                  className="w-full bg-dark-800 border border-gold-500/40 rounded-xl px-4 py-3 text-white text-xs sm:text-sm focus:outline-none focus:border-gold-500 cursor-pointer text-right font-medium"
+                >
+                  {calcData.dietOptions?.map((d) => (
+                    <option
+                      key={d.id}
+                      value={d.id}
+                      className="bg-dark-900 text-white"
+                    >
+                      {d.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* کلاس انتخابی باشگاه */}
+            <div>
+              <label className="block text-xs font-bold text-neutral-300 mb-1.5 text-right flex items-center justify-between">
+                <span>{calcData.classLabel || "کلاس مدنظر شما در باشگاه"}</span>
+                <span className="text-[10px] text-gold-400 font-normal">
+                  تأثیر مستقیم بر نوع و میزان بافت عضله یا چربی
+                </span>
+              </label>
+              <select
+                value={selectedClassId}
+                onChange={(e) => setSelectedClassId(e.target.value)}
+                className="w-full bg-dark-800 border border-neutral-700 rounded-xl px-4 py-3 text-white text-xs sm:text-sm focus:outline-none focus:border-gold-500 cursor-pointer text-right"
+              >
+                {classesList.length > 0 ? (
+                  classesList.map((c) => (
+                    <option
+                      key={c.id}
+                      value={c.id}
+                      className="bg-dark-900 text-white"
+                    >
+                      {c.title} — (مربی: {c.trainer})
+                    </option>
+                  ))
+                ) : (
+                  <option value="default" className="bg-dark-900 text-white">
+                    {calcData.defaultClassOption || "کلاس‌های تخصصی باشگاه"}
+                  </option>
+                )}
+              </select>
             </div>
 
             <button
               type="submit"
               className="w-full py-4 rounded-xl text-sm font-black text-dark-950 bg-gradient-to-r from-gold-400 via-gold-500 to-gold-600 hover:brightness-110 active:scale-98 transition-all duration-200 shadow-xl shadow-gold-500/20 cursor-pointer"
             >
-              {calculator.calculateBtn}
+              {calcData.calculateBtn}
             </button>
           </form>
 
+          {/* کارت نمایش نتایج شبیه‌سازی و نقشه راه تفکیک شده */}
           {result && (
-            <div className="mt-8 pt-8 border-t border-neutral-800 space-y-6">
-              <div className="text-center">
-                <span className="text-xs font-bold text-gold-400 bg-gold-500/10 border border-gold-500/20 px-3.5 py-1 rounded-full">
-                  {calculator.resultsBadge}
-                </span>
+            <div className="mt-10 pt-10 border-t border-neutral-800 space-y-8 animate-fadeIn">
+              <div className="bg-gradient-to-br from-gold-500/10 via-dark-900 to-dark-900 border border-gold-500/30 rounded-3xl p-6 sm:p-8">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pb-6 border-b border-neutral-800/80">
+                  <div>
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gold-400/20 text-gold-400 text-xs font-bold mb-2">
+                      <Sparkles className="w-3.5 h-3.5" />
+                      {calcData.resultsBadge}
+                    </span>
+                    <h3 className="text-lg sm:text-xl font-black text-white">
+                      کلاس:{" "}
+                      <span className="text-gold-400">
+                        {result.activeClass?.title || "کلاس انتخابی"}
+                      </span>{" "}
+                      <span className="text-neutral-400 text-sm font-normal">
+                        ({result.activeClass?.trainer || "مربی تخصصی"})
+                      </span>
+                    </h3>
+                    <p className="text-xs text-accent-emerald mt-1 flex items-center gap-1.5">
+                      <Activity className="w-3.5 h-3.5" />
+                      <span>{result.classMetrics?.typeLabel}</span>
+                    </p>
+                  </div>
+
+                  <div className="text-start sm:text-end">
+                    <span className="text-xs text-neutral-400 block mb-1">
+                      {calcData.projectedWeightLabel}:
+                    </span>
+                    <div className="flex items-center sm:justify-end gap-2">
+                      {goal === "bulk" ? (
+                        <TrendingUp className="w-6 h-6 text-accent-emerald" />
+                      ) : (
+                        <TrendingDown className="w-6 h-6 text-gold-400" />
+                      )}
+                      <span className="text-2xl sm:text-3xl font-black text-white font-english">
+                        ~
+                        {Number(result.projectedWeight).toLocaleString("fa-IR")}{" "}
+                        <span className="text-xs text-neutral-400 font-vazir">
+                          {calcData.weightUnit}
+                        </span>
+                      </span>
+                    </div>
+                    <span className="text-xs text-gold-400 font-semibold block mt-1">
+                      (
+                      {calcData.weightChangeRangeText
+                        ?.replace("{min}", result.minDelta)
+                        .replace("{max}", result.maxDelta) ||
+                        `تغییر بین ${result.minDelta} تا ${result.maxDelta} کیلوگرم`}
+                      )
+                    </span>
+                  </div>
+                </div>
+
+                {/* نقشه راه ۴ فازه */}
+                <div className="space-y-3 mb-6">
+                  <h4 className="text-xs font-bold text-neutral-300 uppercase tracking-wider mb-3">
+                    {calcData.roadmapTitle}:
+                  </h4>
+
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                    {result.milestones.map((ms, idx) => (
+                      <div
+                        key={idx}
+                        className={`p-4 rounded-2xl border transition-all flex flex-col justify-between ${
+                          idx === 3
+                            ? "bg-gold-500/10 border-gold-500/40 ring-1 ring-gold-500/20"
+                            : "bg-dark-950/60 border-neutral-800"
+                        }`}
+                      >
+                        <div>
+                          <div className="flex items-center justify-between gap-1 mb-2">
+                            <span className="text-[11px] font-black text-gold-400">
+                              {ms.title}
+                            </span>
+                            <CheckCircle2 className="w-3.5 h-3.5 text-gold-400 shrink-0" />
+                          </div>
+
+                          <div className="text-xl font-black text-white font-english mb-2">
+                            {Number(ms.projectedW).toLocaleString("fa-IR")}{" "}
+                            <span className="text-xs text-neutral-400 font-vazir">
+                              {calcData.weightUnit}
+                            </span>
+                          </div>
+
+                          <p className="text-[11px] text-neutral-300 leading-relaxed">
+                            {ms.note}
+                          </p>
+                        </div>
+
+                        <div className="pt-3 mt-3 border-t border-neutral-800/60 text-[10px] text-neutral-500 font-english">
+                          {calcData.milestonePhasePrefix?.replace(
+                            "{week}",
+                            ms.week,
+                          ) || `هفته ${ms.week} از ۸`}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* شاخص‌های بیومتریک و تغذیه */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+                  <div className="bg-dark-850 p-3.5 rounded-xl border border-neutral-800">
+                    <span className="block text-[11px] text-neutral-400 mb-1">
+                      {calcData.bmiLabel}
+                    </span>
+                    <span className="text-base font-black text-neutral-200">
+                      {result.bmi}
+                    </span>
+                  </div>
+                  <div className="bg-dark-850 p-3.5 rounded-xl border border-gold-500/30">
+                    <span className="block text-[11px] text-gold-400 mb-1">
+                      {calcData.targetBmiLabel}
+                    </span>
+                    <span className="text-base font-black text-gold-400">
+                      {result.projectedBmi}
+                    </span>
+                  </div>
+                  <div className="bg-dark-850 p-3.5 rounded-xl border border-neutral-800">
+                    <span className="block text-[11px] text-neutral-400 mb-1">
+                      {calcData.caloriesLabel}
+                    </span>
+                    <span className="text-base font-black text-accent-emerald font-english">
+                      {Number(result.targetCalories).toLocaleString("fa-IR")}{" "}
+                      <span className="text-[10px] text-neutral-400 font-vazir">
+                        kcal
+                      </span>
+                    </span>
+                  </div>
+                  <div className="bg-dark-850 p-3.5 rounded-xl border border-neutral-800">
+                    <span className="block text-[11px] text-neutral-400 mb-1">
+                      {calcData.proteinLabel}
+                    </span>
+                    <span className="text-base font-black text-white">
+                      ~{Number(result.suggestedProtein).toLocaleString("fa-IR")}{" "}
+                      <span className="text-[10px] text-neutral-400 font-vazir">
+                        گرم
+                      </span>
+                    </span>
+                  </div>
+                </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
-                <div className="bg-dark-900 p-5 rounded-2xl border border-neutral-800/90 shadow-inner">
-                  <Flame className="w-6 h-6 text-gold-400 mx-auto mb-2" />
-                  <span className="block text-xs text-neutral-400 mb-1">
-                    {calculator.caloriesLabel}
+              {/* اکشن‌های رزرو صندلی و مشاوره واتس‌اپ */}
+              <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+                <a
+                  href="#schedule"
+                  onClick={() => {
+                    if (onSelectClassFromCalc && result.activeClass) {
+                      onSelectClassFromCalc(result.activeClass);
+                    }
+                  }}
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-gold-500 hover:bg-gold-400 text-dark-950 font-black text-xs sm:text-sm shadow-lg shadow-gold-500/20 transition-all cursor-pointer"
+                >
+                  <CalendarCheck className="w-4 h-4" />
+                  <span>
+                    {calcData.bookClassBtnText?.replace(
+                      "{title}",
+                      result.activeClass?.title || "",
+                    ) ||
+                      `رزرو صندلی در کلاس ${result.activeClass?.title || ""}`}
                   </span>
-                  <span className="text-2xl sm:text-3xl font-black text-white">
-                    {Number(result.targetCalories).toLocaleString("fa-IR")}{" "}
-                    <span className="text-xs text-neutral-400 font-normal">
-                      کالری در روز
-                    </span>
-                  </span>
-                </div>
+                </a>
 
-                <div className="bg-dark-900 p-5 rounded-2xl border border-neutral-800/90 shadow-inner">
-                  <Scale className="w-6 h-6 text-accent-emerald mx-auto mb-2" />
-                  <span className="block text-xs text-neutral-400 mb-1">
-                    {calculator.bmiLabel}
-                  </span>
-                  <span className="text-2xl sm:text-3xl font-black text-accent-emerald">
-                    {Number(result.bmi).toLocaleString("fa-IR")}
-                  </span>
-                </div>
-
-                <div className="bg-dark-900 p-5 rounded-2xl border border-neutral-800/90 shadow-inner">
-                  <Dumbbell className="w-6 h-6 text-amber-400 mx-auto mb-2" />
-                  <span className="block text-xs text-neutral-400 mb-1">
-                    {calculator.proteinLabel}
-                  </span>
-                  <span className="text-2xl sm:text-3xl font-black text-white">
-                    ~{Number(result.suggestedProtein).toLocaleString("fa-IR")}{" "}
-                    <span className="text-xs text-neutral-400 font-normal">
-                      گرم در روز
-                    </span>
-                  </span>
-                </div>
-              </div>
-
-              <div className="pt-2 text-center">
                 <a
                   href={waLink}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-xl bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold text-xs sm:text-sm shadow-lg shadow-[#25D366]/25 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 cursor-pointer group transform-gpu"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold text-xs sm:text-sm shadow-lg shadow-[#25D366]/25 transition-all cursor-pointer"
                 >
-                  <svg
-                    className="w-4 h-4 shrink-0 group-hover:scale-110 transition-transform duration-200"
-                    viewBox="0 0 48 48"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                    aria-hidden="true"
-                  >
-                    <circle cx="24" cy="24" r="24" fill="#25D366" />
-                    <path
-                      fillRule="evenodd"
-                      clipRule="evenodd"
-                      d="M34.6 13.4C31.8 10.6 28.1 9 24.1 9C15.8 9 9.1 15.7 9.1 24C9.1 26.6 9.8 29.2 11.1 31.5L9 39L16.8 36.9C19 38.1 21.5 38.8 24.1 38.8H24.1C32.4 38.8 39.1 32.1 39.1 23.8C39.1 19.8 37.5 16.2 34.6 13.4ZM24.1 36.3C21.9 36.3 19.7 35.7 17.8 34.6L17.3 34.3L12.7 35.5L13.9 31L13.6 30.5C12.4 28.6 11.7 26.3 11.7 24C11.7 17.2 17.3 11.6 24.1 11.6C27.4 11.6 30.5 12.9 32.8 15.2C35.1 17.5 36.4 20.6 36.4 23.9C36.4 30.7 30.9 36.3 24.1 36.3ZM30.9 27.2C30.5 27 28.7 26.1 28.4 26C28.1 25.9 27.8 25.8 27.6 26.2C27.3 26.6 26.6 27.4 26.4 27.7C26.2 27.9 26 28 25.6 27.8C25.2 27.6 24.1 27.2 22.7 26C21.6 25 20.9 23.8 20.7 23.4C20.5 23 20.7 22.8 20.9 22.6C21.1 22.4 21.3 22.1 21.5 21.9C21.7 21.7 21.8 21.5 21.9 21.3C22 21.1 22 20.9 21.9 20.7C21.8 20.5 21.1 18.9 20.9 18.2C20.6 17.5 20.3 17.6 20.1 17.6H19.5C19.3 17.6 18.9 17.7 18.6 18C18.3 18.3 17.4 19.1 17.4 20.8C17.4 22.5 18.6 24.1 18.8 24.3C19 24.5 21.3 28.1 24.8 29.6C25.6 30 26.3 30.2 26.8 30.4C27.7 30.7 28.5 30.6 29.1 30.5C29.8 30.4 31.2 29.6 31.5 28.8C31.8 28 31.8 27.3 31.7 27.2C31.6 27.3 31.3 27.4 30.9 27.2Z"
-                      fill="#FFFFFF"
-                    />
-                  </svg>
-                  <span>{calculator.sendWhatsappBtn}</span>
+                  <span>{calcData.sendWhatsappBtn}</span>
                 </a>
               </div>
             </div>
