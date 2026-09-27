@@ -735,11 +735,11 @@ export const clubData = {
         badge: "بدون صف دستگاه",
         photos: [
           {
-            url: "/images/fit-room.jpg",
+            url: "/images/fit-room.webp",
             caption: "ایستگاه رک‌های اسکوات و پرس سینه چندکاره",
           },
           {
-            url: "/images/fit-room-2.jpg",
+            url: "/images/fit-room-2.webp",
             caption: "ست کامل دمبل‌های سنگین اورتان تا ۵۰ کیلوگرم",
           },
         ],
@@ -757,11 +757,11 @@ export const clubData = {
         badge: "امنیت ۱۰۰٪",
         photos: [
           {
-            url: "/images/locker-1.jpg",
+            url: "/images/locker-1.webp",
             caption: "کمدهای الکترونیک با دستبند RFID هوشمند",
           },
           {
-            url: "/images/locker-2.jpg",
+            url: "/images/locker-2.webp",
             caption: "کابین‌های اختصاصی دوش آب‌گرم با سیستم ضدعفونی مداوم",
           },
         ],
@@ -779,11 +779,11 @@ export const clubData = {
         badge: "ریکاوری حرفه‌ای",
         photos: [
           {
-            url: "/images/suna-1.jpg",
+            url: "/images/suna-1.webp",
             caption: "سونای خشک چوب ترمو فنلاندی با سنگ‌های آتشفشانی",
           },
           {
-            url: "/images/suna-2.jpg",
+            url: "/images/suna-2.webp",
             caption: "حوضچه آب سرد (Cold Plunge) برای کاهش التهاب عضلات",
           },
         ],
@@ -801,11 +801,11 @@ export const clubData = {
         badge: "ارگانیک و تازه",
         photos: [
           {
-            url: "/images/bar-1.jpg",
+            url: "/images/bar-1.webp",
             caption: "شیک‌های پروتئینی ایزوله و اسموتی‌های بدون شکر",
           },
           {
-            url: "/images/bar-2.jpg",
+            url: "/images/bar-2.webp",
             caption: "قهوه اسپرسو تخصصی ۱۰۰٪ عربیکا جهت انرژی قبل تمرین",
           },
         ],
@@ -823,11 +823,11 @@ export const clubData = {
         badge: "بانوان و آقایان",
         photos: [
           {
-            url: "/images/pilates-2.jpg",
+            url: "/images/pilates-2.webp",
             caption: "دستگاه‌های ریفورمر استاندارد پیلاتس",
           },
           {
-            url: "/images/pilates-1.jpg",
+            url: "/images/pilates-1.webp",
             caption: "فضای آرامش‌بخش با مت‌های استاندارد یوگا و کش‌های TRX",
           },
         ],
