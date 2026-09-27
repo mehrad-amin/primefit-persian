@@ -742,10 +742,6 @@ export const clubData = {
             url: "/images/fit-room-2.jpg",
             caption: "ست کامل دمبل‌های سنگین اورتان تا ۵۰ کیلوگرم",
           },
-          {
-            url: "https://images.unsplash.com/photo-1540497077202-7c8a3999166f?auto=format&fit=crop&w=1000&q=80",
-            caption: "بخش دستگاه‌های سیم‌کش و کراس‌اور ایزوله",
-          },
         ],
         features: [
           "تهویه هوای مطبوع با فیلتراسیون نانو",
@@ -767,10 +763,6 @@ export const clubData = {
           {
             url: "/images/locker-2.jpg",
             caption: "کابین‌های اختصاصی دوش آب‌گرم با سیستم ضدعفونی مداوم",
-          },
-          {
-            url: "https://images.unsplash.com/photo-1507652313519-d4e9174996dd?auto=format&fit=crop&w=1000&q=80",
-            caption: "سشوار، آینه‌های گریم و لاونج تعویض لباس",
           },
         ],
         features: [
@@ -831,11 +823,11 @@ export const clubData = {
         badge: "بانوان و آقایان",
         photos: [
           {
-            url: "https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&w=1000&q=80",
+            url: "/images/pilates-2.jpg",
             caption: "دستگاه‌های ریفورمر استاندارد پیلاتس",
           },
           {
-            url: "https://images.unsplash.com/photo-1575052814086-f385e2e2ad1b?auto=format&fit=crop&w=1000&q=80",
+            url: "/images/pilates-1.jpg",
             caption: "فضای آرامش‌بخش با مت‌های استاندارد یوگا و کش‌های TRX",
           },
         ],
