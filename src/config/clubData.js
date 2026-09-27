@@ -689,4 +689,162 @@ export const clubData = {
     bookClassBtnText: "رزرو صندلی در کلاس {title}",
     sendWhatsappBtn: "ارسال آنالیز به واتس‌اپ مجموعه و مشاوره مربی",
   },
+  tour: {
+    badge: "امکانات و فضاهای مجموعه",
+    title: "گالری ۳۶۰ درجه و فضاهای اختصاصی باشگاه",
+    subtitle:
+      "برای مشاهده زوایای مختلف هر بخش و تجهیزات، دسته‌بندی را انتخاب و عکس‌ها را ورق بزنید",
+    categories: [
+      {
+        id: "all",
+        label: "همه بخش‌ها",
+        icon: "Sparkles",
+      },
+      {
+        id: "gym_floor",
+        label: "سالن اصلی و دستگاه‌ها",
+        icon: "Dumbbell",
+      },
+      {
+        id: "lockers",
+        label: "رختکن، لاکر و دوش VIP",
+        icon: "KeyRound",
+      },
+      {
+        id: "recovery",
+        label: "سونا، جکوزی و حوضچه یخ",
+        icon: "Waves",
+      },
+      {
+        id: "cafe",
+        label: "کافه بار و پروتئین",
+        icon: "Coffee",
+      },
+      {
+        id: "studio",
+        label: "استودیو پیلاتس و یوگا",
+        icon: "HeartPulse",
+      },
+    ],
+    spaces: [
+      {
+        id: "gym_floor_main",
+        categoryId: "gym_floor",
+        title: "سالن وزنه‌های آزاد و تجهیزات پیشرفته",
+        subtitle: "برند ایتالیایی Panatta و Technogym",
+        badge: "بدون صف دستگاه",
+        photos: [
+          {
+            url: "/images/fit-room.jpg",
+            caption: "ایستگاه رک‌های اسکوات و پرس سینه چندکاره",
+          },
+          {
+            url: "/images/fit-room-2.jpg",
+            caption: "ست کامل دمبل‌های سنگین اورتان تا ۵۰ کیلوگرم",
+          },
+          {
+            url: "https://images.unsplash.com/photo-1540497077202-7c8a3999166f?auto=format&fit=crop&w=1000&q=80",
+            caption: "بخش دستگاه‌های سیم‌کش و کراس‌اور ایزوله",
+          },
+        ],
+        features: [
+          "تهویه هوای مطبوع با فیلتراسیون نانو",
+          "کفپوش آنتی‌شوک ضد ضربه",
+          "آینه‌های تمام‌قد پانوراما",
+        ],
+      },
+      {
+        id: "lockers_vip",
+        categoryId: "lockers",
+        title: "رختکن و کمدهای هوشمند اختصاصی",
+        subtitle: "نهایت بهداشت، امنیت و راحتی ورزشکار",
+        badge: "امنیت ۱۰۰٪",
+        photos: [
+          {
+            url: "/images/locker-1.jpg",
+            caption: "کمدهای الکترونیک با دستبند RFID هوشمند",
+          },
+          {
+            url: "/images/locker-2.jpg",
+            caption: "کابین‌های اختصاصی دوش آب‌گرم با سیستم ضدعفونی مداوم",
+          },
+          {
+            url: "https://images.unsplash.com/photo-1507652313519-d4e9174996dd?auto=format&fit=crop&w=1000&q=80",
+            caption: "سشوار، آینه‌های گریم و لاونج تعویض لباس",
+          },
+        ],
+        features: [
+          "سشوار صنعتی و لوازم بهداشتی رایگان",
+          "دوش‌های فشار قوی مجزا",
+          "دستبند کارتی قفل کمد",
+        ],
+      },
+      {
+        id: "recovery_spa",
+        categoryId: "recovery",
+        title: "مجموعه آبی، سونا و ریکاوری عضلانی",
+        subtitle: "تخلیه اسید لاکتیک و ریلکسیشن بعد از تمرین",
+        badge: "ریکاوری حرفه‌ای",
+        photos: [
+          {
+            url: "/images/suna-1.jpg",
+            caption: "سونای خشک چوب ترمو فنلاندی با سنگ‌های آتشفشانی",
+          },
+          {
+            url: "/images/suna-2.jpg",
+            caption: "حوضچه آب سرد (Cold Plunge) برای کاهش التهاب عضلات",
+          },
+        ],
+        features: [
+          "کنترل مداوم دمای حوضچه سرد",
+          "آروماتراپی و اسانس‌های گیاهی سونا",
+          "سیستم تصفیه ازن",
+        ],
+      },
+      {
+        id: "cafe_bar",
+        categoryId: "cafe",
+        title: "بار اختصاصی پروتئین، اسموتی و مکمل",
+        subtitle: "سوخت‌گیری فوری قبل و بعد از تمرین",
+        badge: "ارگانیک و تازه",
+        photos: [
+          {
+            url: "/images/bar-1.jpg",
+            caption: "شیک‌های پروتئینی ایزوله و اسموتی‌های بدون شکر",
+          },
+          {
+            url: "/images/bar-2.jpg",
+            caption: "قهوه اسپرسو تخصصی ۱۰۰٪ عربیکا جهت انرژی قبل تمرین",
+          },
+        ],
+        features: [
+          "تهیه شیک پروتئین با مکمل دلخواه",
+          "قهوه تخصصی با دستگاه ایتالیایی",
+          "اسنک‌های رژیمی و پروتئین بار",
+        ],
+      },
+      {
+        id: "studio_classes",
+        categoryId: "studio",
+        title: "استودیو پیلاتس، تی‌آر‌ایکس و باله فیت",
+        subtitle: "محیطی ایزوله با کفپوش ضد ضربه و نور لایت",
+        badge: "بانوان و آقایان",
+        photos: [
+          {
+            url: "https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&w=1000&q=80",
+            caption: "دستگاه‌های ریفورمر استاندارد پیلاتس",
+          },
+          {
+            url: "https://images.unsplash.com/photo-1575052814086-f385e2e2ad1b?auto=format&fit=crop&w=1000&q=80",
+            caption: "فضای آرامش‌بخش با مت‌های استاندارد یوگا و کش‌های TRX",
+          },
+        ],
+        features: [
+          "سیستم صوتی استریو پیشرفته",
+          "تخت‌های ریفورمر نو",
+          "نورپردازی قابل تنظیم متناسب با مود کلاس",
+        ],
+      },
+    ],
+  },
 };

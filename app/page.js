@@ -17,6 +17,7 @@ import Faq from "@/src/components/Faq.jsx";
 import Footer from "@/src/components/Footer.jsx";
 import StickyBookingBar from "@/src/components/StickyBookingBar.jsx";
 import FloatingWhatsApp from "@/src/components/FloatingWhatsApp.jsx";
+import ClubTour from "@/src/components/ClubTour.jsx";
 
 export default function HomePage() {
   const [selectedBookings, setSelectedBookings] = useState({
@@ -100,7 +101,7 @@ export default function HomePage() {
     >
       <Header />
       <Hero />
-      <Facilities />
+      <ClubTour />
       <Recovery />
       <TransformationsSlider />
       <FitnessCalculator />
