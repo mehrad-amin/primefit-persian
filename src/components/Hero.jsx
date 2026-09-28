@@ -3,6 +3,7 @@
 import { clubData } from "../config/clubData.js";
 import { ArrowLeft, ShieldCheck } from "lucide-react";
 import { motion } from "framer-motion";
+import Image from "next/image";
 
 export default function Hero() {
   const { hero } = clubData.brand || {};
@@ -42,31 +43,35 @@ export default function Hero() {
     >
       {/* پس‌زمینه ویدیویی با اولویت بارگذاری آنی */}
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none select-none">
-        <video
-          autoPlay
-          loop
-          muted
-          playsInline
-          preload="metadata"
-          poster="/poster.webp"
-          disablePictureInPicture
-          disableRemotePlayback
-          className="absolute inset-0 w-full h-full object-cover object-center opacity-70"
-        >
-          {/* سورس مخصوص دسکتاپ (عرض بالای 768px) */}
-          <source
-            src="/hero-video.mp4"
-            type="video/mp4"
-            media="(min-width: 768px)"
+        {/* ۱. تصویر مخصوص موبایل (زیر 768px) */}
+        <div className="relative w-full h-full block md:hidden">
+          <Image
+            src="/images/hero-mobile.webp" // تصویر عمودی مخصوص گوشی
+            alt="باشگاه ورزشی - نسخه موبایل"
+            fill
+            priority
+            quality={80}
+            sizes="100vw"
+            className="object-cover object-center opacity-75 brightness-95 contrast-105"
           />
-          {/* سورس پیش‌فرض مخصوص موبایل */}
-          <source src="/hero-video-2.mp4" type="video/mp4" />
-        </video>
+        </div>
 
-        {/* لایه گرادیان تیره */}
-        <div className="absolute inset-0 bg-gradient-to-b from-dark-950/60 via-transparent to-dark-950" />
+        {/* ۲. تصویر مخصوص تبلت و دسکتاپ (از 768px به بالا) */}
+        <div className="relative w-full h-full hidden md:block">
+          <Image
+            src="/images/hero-bg.webp" // تصویر افقی مخصوص دسکتاپ
+            alt="باشگاه ورزشی - نسخه دسکتاپ"
+            fill
+            priority
+            quality={85}
+            sizes="100vw"
+            className="object-cover object-center opacity-75 brightness-95 contrast-105"
+          />
+        </div>
+
+        {/* لایه‌های گرادیان ملایم برای خوانایی متن و دکمه‌ها */}
+        <div className="absolute inset-0 bg-gradient-to-b from-dark-950/70 via-dark-950/25 to-dark-950/90" />
       </div>
-
       <motion.div
         variants={containerVariants}
         initial="hidden"

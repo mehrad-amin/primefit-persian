@@ -27,10 +27,10 @@ export default function Header() {
   }, []);
 
   const navLinks = [
-    { label: "ویژگی‌ها و امکانات", href: "#features", show: true },
+    { label: "ویژگی‌ها و امکانات", href: "#recovery", show: true },
     {
       label: "سالن‌ها و حریم خصوصی",
-      href: "#facilities",
+      href: "#tour",
       show: true,
     },
     {
